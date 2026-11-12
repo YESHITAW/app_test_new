@@ -22,9 +22,11 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
+          cache: 'gradle'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Accept Android SDK Licenses
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -33,12 +35,12 @@ jobs:
 
       - name: Prepare Build Environment
         run: |
-          # Copy .env.example if .env does not exist
+          # Copy .env.example if .env is missing
           if [ ! -f ".env" ]; then
             cp .env.example .env
           fi
           
-          # Generate debug.keystore if not present to satisfy signingConfig
+          # Generate debug.keystore if not present to satisfy signingConfig in build.gradle.kts
           if [ ! -f "debug.keystore" ]; then
             keytool -genkey -v \
               -keystore debug.keystore \
@@ -53,13 +55,13 @@ jobs:
 
       - name: Assemble Debug APK
         run: |
-          gradle assembleDebug --no-daemon --stacktrace
+          gradle :app:assembleDebug --stacktrace
 
-      - name: Prepare APK Asset for Release
+      - name: Collect Output APK
         run: |
           mkdir -p output_apk
-          find app/build/outputs/apk/debug/ -name "*.apk" -exec cp {} output_apk/AnsweringMachine-v1.0-debug.apk \;
-          ls -la output_apk/
+          find app/build/outputs/apk/ -name "*.apk" -exec cp {} output_apk/AnsweringMachine-v1.0-debug.apk \;
+          ls -lh output_apk/
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
