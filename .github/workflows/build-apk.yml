@@ -55,19 +55,7 @@ jobs:
 
       - name: Assemble Debug APK
         run: |
-          gradle :app:assembleDebug --stacktrace -x test > build_error.txt 2>&1 || true
-          tail -n 300 build_error.txt > build_error_tail.txt
-          git config user.name "CI Bot"
-          git config user.email "ci@example.com"
-          git add build_error_tail.txt
-          git commit -m "ci: capture error tail" || true
-          git push origin main || true
-          if grep -q "BUILD SUCCESSFUL" build_error.txt; then
-            echo "Build successful!"
-          else
-            echo "Build failed!"
-            exit 1
-          fi
+          gradle :app:assembleDebug --no-daemon --stacktrace -x test
 
       - name: Locate Generated APKs
         run: |
