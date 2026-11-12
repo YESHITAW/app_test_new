@@ -56,17 +56,17 @@ jobs:
 
       - name: Assemble Debug APK
         run: |
-          gradle :app:assembleDebug --no-daemon --stacktrace -x test 2>&1 | tee build.log || (echo "=== BUILD FAILURE DETAILS ===" && tail -n 100 build.log && exit 1)
+          gradle :app:assembleDebug --no-daemon --stacktrace -x test
 
-      - name: Verify APK Generated
+      - name: Locate Generated APKs
         run: |
-          ls -la app/build/outputs/apk/debug/
+          find app/build/ -name "*.apk" -print
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: AnsweringMachine-APK
-          path: app/build/outputs/apk/debug/*.apk
+          path: app/build/**/*.apk
           retention-days: 30
 
       - name: Create or Update GitHub Release
@@ -88,7 +88,7 @@ jobs:
             
             #### Download:
             Download the APK file below and install it directly on your Android device.
-          files: app/build/outputs/apk/debug/*.apk
+          files: app/build/**/*.apk
           draft: false
           prerelease: false
         env:
