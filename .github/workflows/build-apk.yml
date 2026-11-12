@@ -28,17 +28,19 @@ jobs:
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
           $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-35" "build-tools;35.0.0" || true
 
-      - name: Setup Gradle
+      - name: Setup Gradle 9.3.1
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '9.0.0'
+          gradle-version: '9.3.1'
 
       - name: Prepare Build Environment
         run: |
+          # Copy .env.example if .env is missing
           if [ ! -f ".env" ]; then
             cp .env.example .env
           fi
           
+          # Generate debug.keystore if not present to satisfy signingConfig in build.gradle.kts
           if [ ! -f "debug.keystore" ]; then
             keytool -genkey -v \
               -keystore debug.keystore \
@@ -53,25 +55,11 @@ jobs:
 
       - name: Assemble Debug APK
         run: |
-          gradle :app:assembleDebug --stacktrace -x test > build.log 2>&1 || true
+          gradle :app:assembleDebug --no-daemon --stacktrace -x test
 
-      - name: Capture Build Log to Git
+      - name: Locate Generated APKs
         run: |
-          tail -n 300 build.log > build_error.txt
-          git config user.name "CI Bot"
-          git config user.email "ci@example.com"
-          git add build_error.txt
-          git commit -m "ci: capture build error log" || true
-          git push origin main || true
-
-      - name: Fail if build failed
-        run: |
-          if grep -q "BUILD SUCCESSFUL" build.log; then
-            echo "Build passed!"
-          else
-            echo "Build failed!"
-            exit 1
-          fi
+          find app/build/ -name "*.apk" -print
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
